@@ -27,10 +27,10 @@ Visit the [project homepage](https://lexharden.github.io/nanocalc/) for more inf
 
 | Platform | Download | Size |
 |----------|----------|------|
-| 🪟 **Windows** | [nanocalc-windows-x64.exe](https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe) | ~5 MB |
-| 🍎 **macOS (Apple Silicon)** | [nanocalc-macos-arm64.dmg](https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-arm64.dmg) | ~6 MB |
-| 🍎 **macOS (Intel)** | [nanocalc-macos-x64.dmg](https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-x64.dmg) | ~6 MB |
-| 🐧 **Linux** | [nanocalc-linux-x64](https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64) | ~5 MB |
+| 🪟 **Windows** | [nanocalc-windows-x64.exe.zip](https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe.zip) | ~4 MB |
+| 🍎 **macOS (Apple Silicon)** | [NanoCalc-macos-arm64.app.zip](https://github.com/Lexharden/nanocalc/releases/latest/download/NanoCalc-macos-arm64.app.zip) | ~2.8 MB |
+| 🍎 **macOS (Intel)** | [NanoCalc-macos-x64.app.zip](https://github.com/Lexharden/nanocalc/releases/latest/download/NanoCalc-macos-x64.app.zip) | ~3 MB |
+| 🐧 **Linux** | [nanocalc-linux-x64.tar.gz](https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64.tar.gz) | ~4.2 MB |
 
 **[View all releases](https://github.com/Lexharden/nanocalc/releases)**
 

@@ -554,46 +554,62 @@
     </footer>
 
     <script>
+        // Platform detection
         function detectPlatform() {
             const userAgent = navigator.userAgent.toLowerCase();
             const platform = navigator.platform.toLowerCase();
             
+            let detectedOS = 'windows';
             let icon = 'fa-windows';
             let displayName = 'Windows';
-            let downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe';
+            let downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe.zip';
             
             if (platform.includes('mac') || userAgent.includes('mac')) {
-                icon = 'fa-apple';
-                displayName = 'macOS';
-                // Detect Apple Silicon vs Intel
-                if (userAgent.includes('arm') || userAgent.includes('aarch64')) {
-                    downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-arm64.dmg';
+                // Detectar Apple Silicon vs Intel
+                const isAppleSilicon = userAgent.includes('arm') || userAgent.includes('aarch64');
+                
+                if (isAppleSilicon) {
+                    detectedOS = 'macos-arm';
+                    icon = 'fa-apple';
+                    displayName = 'macOS (Apple Silicon)';
+                    downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/NanoCalc-macos-arm64.app.zip';
                 } else {
-                    downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-x64.dmg';
+                    detectedOS = 'macos-intel';
+                    icon = 'fa-apple';
+                    displayName = 'macOS (Intel)';
+                    downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/NanoCalc-macos-x64.app.zip';
                 }
             } else if (platform.includes('linux') || userAgent.includes('linux')) {
+                detectedOS = 'linux';
                 icon = 'fa-linux';
                 displayName = 'Linux';
-                downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64';
+                downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64.tar.gz';
             }
             
+            // Update UI
             document.getElementById('platform-icon').className = `fab ${icon}`;
             document.getElementById('platform-name').textContent = `We detected you're using ${displayName}`;
             document.getElementById('download-text').textContent = `Download for ${displayName}`;
             document.getElementById('main-download-btn').href = downloadLink;
+            
+            return detectedOS;
         }
         
         function downloadForPlatform(platform) {
             const links = {
-                'windows': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe',
-                'macos': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-arm64.dmg',
-                'linux': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64'
+                'windows': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe.zip',
+                'macos-arm': 'https://github.com/Lexharden/nanocalc/releases/latest/download/NanoCalc-macos-arm64.app.zip',
+                'macos-intel': 'https://github.com/Lexharden/nanocalc/releases/latest/download/NanoCalc-macos-x64.app.zip',
+                'linux': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64.tar.gz'
             };
             
             window.location.href = links[platform];
         }
         
-        document.addEventListener('DOMContentLoaded', detectPlatform);
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            detectPlatform();
+        });
     </script>
 </body>
 </html>
