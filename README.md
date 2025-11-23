@@ -63,13 +63,6 @@ cargo build --release
 cargo run --release
 ```
 
-## 📖 Documentation
-
-- [User Guide](docs/USER_GUIDE.md) - Complete usage instructions
-- [Physics Models](docs/PHYSICS_MODELS.md) - Mathematical background
-- [API Reference](docs/API.md) - For developers
-- [Best Practices](docs/BEST_PRACTICES.md) - Scientific computing with Rust
-
 ## 🤝 Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
