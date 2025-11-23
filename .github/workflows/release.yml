@@ -150,19 +150,21 @@ jobs:
 
       - name: Prepare binary (Windows)
         if: matrix.os == 'windows-latest'
+        shell: powershell
         run: |
-          copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+          Copy-Item "target\${{ matrix.target }}\release\${{ matrix.artifact_name }}" -Destination "${{ matrix.asset_name }}"
           
-          REM Crear carpeta con ejecutable e icono
-          mkdir nanocalc-windows
-          copy ${{ matrix.asset_name }} nanocalc-windows\
+          # Crear carpeta con ejecutable e icono
+          New-Item -ItemType Directory -Force -Path "nanocalc-windows"
+          Copy-Item "${{ matrix.asset_name }}" -Destination "nanocalc-windows\"
           
-          if exist "target\release\icon.png" (
-            copy target\release\icon.png nanocalc-windows\nanocalc.png
-          )
+          # Copiar icono si existe
+          if (Test-Path "target\release\icon.png") {
+            Copy-Item "target\release\icon.png" -Destination "nanocalc-windows\nanocalc.png"
+          }
           
-          REM Comprimir todo
-          powershell -Command "Compress-Archive -Path nanocalc-windows\* -DestinationPath ${{ matrix.asset_name }}.zip"
+          # Comprimir todo
+          Compress-Archive -Path "nanocalc-windows\*" -DestinationPath "${{ matrix.asset_name }}.zip"
 
       - name: Upload artifact (macOS)
         if: matrix.os == 'macos-latest'
