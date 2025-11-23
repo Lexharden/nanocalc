@@ -1,0 +1,183 @@
+name: Release Builds
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.1.0)'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: nanocalc
+            asset_name: nanocalc-linux-x64
+            
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: nanocalc.exe
+            asset_name: nanocalc-windows-x64.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binary (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+          chmod +x ${{ matrix.asset_name }}
+      
+      - name: Create DMG (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p NanoCalc.app/Contents/MacOS
+          mkdir -p NanoCalc.app/Contents/Resources
+          cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} NanoCalc.app/Contents/MacOS/
+          chmod +x NanoCalc.app/Contents/MacOS/${{ matrix.artifact_name }}
+          
+          cat > NanoCalc.app/Contents/Info.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>${{ matrix.artifact_name }}</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.yafelgh.nanocalc</string>
+              <key>CFBundleName</key>
+              <string>NanoCalc</string>
+              <key>CFBundleVersion</key>
+              <string>0.1.0</string>
+              <key>CFBundleShortVersionString</key>
+              <string>0.1.0</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>11.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
+          # Firmar ad-hoc (sin certificado) para evitar el error "damaged"
+          codesign --force --deep --sign - NanoCalc.app
+          
+          mkdir -p dmg
+          cp -r NanoCalc.app dmg/
+          
+          # Crear un symlink a Applications para facilitar la instalación
+          ln -s /Applications dmg/Applications
+          
+          hdiutil create -volname "NanoCalc" -srcfolder dmg -ov -format UDZO ${{ matrix.asset_name }}
+
+      - name: Prepare binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
+
+  create-release:
+    needs: build-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Display structure
+        run: ls -R ./artifacts
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: NanoCalc ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## NanoCalc ${{ steps.get_version.outputs.VERSION }}
+            
+            Professional nanoscale optical properties calculator with Mie scattering calculations.
+            
+            ### Features
+            - 🔬 Accurate Mie theory calculations for spherical nanoparticles
+            - 📊 Interactive spectral analysis (300-800 nm)
+            - 🧪 Built-in periodic table with optical properties
+            - 🌐 Multilingual support (English/Spanish)
+            - ⚡ High-performance Rust implementation
+            
+            ### Downloads
+            - **Windows**: Download `nanocalc-windows-x64.exe`
+            - **macOS (Apple Silicon)**: Download `nanocalc-macos-arm64.dmg`
+            - **macOS (Intel)**: Download `nanocalc-macos-x64.dmg`
+            - **Linux**: Download `nanocalc-linux-x64`
+            
+            ### Installation
+            - **Windows**: Run the .exe file directly
+            - **macOS**: 
+              1. Open the .dmg file
+              2. Drag NanoCalc to Applications folder
+              3. If you get "damaged" error, run in Terminal: `xattr -cr /Applications/NanoCalc.app`
+              4. Then right-click the app and select "Open"
+            - **Linux**: Make executable with `chmod +x nanocalc-linux-x64` then run
+            
+            ### macOS Security Note
+            Since the app is not notarized by Apple, you may need to allow it in System Preferences > Privacy & Security after first launch.
+            
+            ---
+            Built with ❤️ by Yafel G.H.
+          draft: false
+          prerelease: false
+          files: |
+            ./artifacts/nanocalc-linux-x64/nanocalc-linux-x64
+            ./artifacts/nanocalc-windows-x64.exe/nanocalc-windows-x64.exe
+            ./artifacts/nanocalc-macos-arm64.dmg/nanocalc-macos-arm64.dmg
+            ./artifacts/nanocalc-macos-x64.dmg/nanocalc-macos-x64.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

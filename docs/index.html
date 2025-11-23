@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NanoCalc - Professional nanoscale optical properties calculator for researchers and students">
+    <meta name="keywords" content="nanoparticles, optics, Mie scattering, nanotechnology, physics calculator">
+    <meta name="author" content="Yafel G.H.">
+    <title>NanoCalc - Nanoscale Optical Properties Calculator</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --text: #333;
+            --text-light: #666;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding: 1rem 0;
+        }
+        
+        nav .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        nav .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: var(--primary);
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding-top: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            animation: float 20s linear infinite;
+        }
+        
+        @keyframes float {
+            from { transform: translateY(0); }
+            to { transform: translateY(-100px); }
+        }
+        
+        .hero .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .hero-image {
+            position: relative;
+            animation: levitate 3s ease-in-out infinite;
+        }
+        
+        @keyframes levitate {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .download-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+            color: var(--text);
+        }
+        
+        .platform-detected {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-radius: 10px;
+        }
+        
+        .platform-detected i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        
+        .download-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .download-card {
+            padding: 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .download-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .download-card i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .download-card h3 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .download-card .size {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            background: var(--light);
+        }
+        
+        .features .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 4rem;
+            font-size: 1.2rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .feature-card i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .feature-card p {
+            color: var(--text-light);
+            line-height: 1.8;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 2rem;
+        }
+        
+        footer .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            color: white;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .social-links a:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+        }
+        
+        .copyright {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.5);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero .container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            nav ul {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-atom"></i> NanoCalc
+            </div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#download">Download</a></li>
+                <li><a href="https://github.com/Lexharden/nanocalc" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div>
+                <h1>NanoCalc</h1>
+                <p class="subtitle">Professional Nanoscale Optical Properties Calculator</p>
+                <p style="margin-bottom: 2rem; opacity: 0.9;">
+                    Advanced Mie scattering calculations for nanoparticles. Calculate optical properties, 
+                    visualize spectra, and explore plasmonic resonances. Built with Rust for maximum performance.
+                </p>
+                
+                <div>
+                    <a href="#download" class="btn-primary">
+                        <i class="fas fa-download"></i>
+                        Download Now
+                    </a>
+                </div>
+                
+                <div class="download-section">
+                    <div class="platform-detected">
+                        <i id="platform-icon" class="fab fa-windows"></i>
+                        <div>
+                            <strong id="platform-name">Detecting your platform...</strong>
+                            <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">
+                                Desktop application for Windows, macOS, and Linux
+                            </p>
+                        </div>
+                    </div>
+                    <a href="#" id="main-download-btn" class="btn-primary" style="width: 100%; justify-content: center;">
+                        <i class="fas fa-download"></i>
+                        <span id="download-text">Download for Windows</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="hero-image">
+                <svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="particle-grad">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:0.8" />
+                        </radialGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <circle cx="250" cy="250" r="80" fill="url(#particle-grad)" filter="url(#glow)">
+                        <animate attributeName="r" values="80;85;80" dur="3s" repeatCount="indefinite"/>
+                    </circle>
+                    
+                    <g opacity="0.6">
+                        <path d="M 50 250 Q 150 200, 250 250" stroke="#fff" stroke-width="3" fill="none">
+                            <animate attributeName="d" 
+                                values="M 50 250 Q 150 200, 250 250;M 50 250 Q 150 300, 250 250;M 50 250 Q 150 200, 250 250" 
+                                dur="2s" repeatCount="indefinite"/>
+                        </path>
+                    </g>
+                    
+                    <g opacity="0.4">
+                        <line x1="250" y1="250" x2="450" y2="150" stroke="#f093fb" stroke-width="2">
+                            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="1.5s" repeatCount="indefinite"/>
+                        </line>
+                        <line x1="250" y1="250" x2="450" y2="350" stroke="#f093fb" stroke-width="2">
+                            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+                        </line>
+                    </g>
+                    
+                    <circle cx="250" cy="170" r="8" fill="#fff">
+                        <animateTransform attributeName="transform" type="rotate" from="0 250 250" to="360 250 250" dur="4s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">Everything you need for nanoscale optical calculations</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-wave-square"></i>
+                    <h3>Mie Scattering</h3>
+                    <p>Accurate Mie theory calculations for spherical nanoparticles. Calculate Q_sca, Q_abs, and Q_ext with complex refractive indices.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Spectral Analysis</h3>
+                    <p>Full wavelength scanning from 300-800 nm. Interactive plots with real-time updates and zoom capabilities.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-table"></i>
+                    <h3>Periodic Table</h3>
+                    <p>Built-in database of optical properties for 13 common elements at 550 nm wavelength.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-language"></i>
+                    <h3>Multilingual</h3>
+                    <p>Full support for English and Spanish interfaces with instant language switching.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-bolt"></i>
+                    <h3>High Performance</h3>
+                    <p>Built with Rust for native performance. Near-instant calculations even for complex spectra.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h3>Educational</h3>
+                    <p>Detailed tooltips explain the physics behind each parameter. Perfect for students and researchers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="features" style="background: white;">
+        <div class="container">
+            <h2 class="section-title">Download NanoCalc</h2>
+            <p class="section-subtitle">Native desktop application for maximum performance</p>
+            
+            <div class="download-options">
+                <div class="download-card" onclick="downloadForPlatform('windows')">
+                    <i class="fab fa-windows"></i>
+                    <h3>Windows</h3>
+                    <p class="size">~5 MB • x64</p>
+                    <p style="margin-top: 1rem; color: var(--text-light);">Windows 10/11</p>
+                </div>
+                
+                <div class="download-card" onclick="downloadForPlatform('macos')">
+                    <i class="fab fa-apple"></i>
+                    <h3>macOS</h3>
+                    <p class="size">~6 MB • Universal</p>
+                    <p style="margin-top: 1rem; color: var(--text-light);">macOS 11+</p>
+                </div>
+                
+                <div class="download-card" onclick="downloadForPlatform('linux')">
+                    <i class="fab fa-linux"></i>
+                    <h3>Linux</h3>
+                    <p class="size">~5 MB • x64</p>
+                    <p style="margin-top: 1rem; color: var(--text-light);">Ubuntu 20.04+</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="https://github.com/Lexharden/nanocalc/releases" target="_blank" class="btn-primary">
+                    <i class="fab fa-github"></i>
+                    View All Releases on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <h3><i class="fas fa-atom"></i> NanoCalc</h3>
+            <p>Professional nanoscale optical properties calculator</p>
+            <div class="social-links">
+                <a href="https://github.com/Lexharden/nanocalc" target="_blank" title="GitHub">
+                    <i class="fab fa-github fa-lg"></i>
+                </a>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2025 NanoCalc by Yafel G.H. • Licensed under MIT • Built with Rust and egui</p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem;">Native desktop application • Version 0.1.0</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function detectPlatform() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const platform = navigator.platform.toLowerCase();
+            
+            let icon = 'fa-windows';
+            let displayName = 'Windows';
+            let downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe';
+            
+            if (platform.includes('mac') || userAgent.includes('mac')) {
+                icon = 'fa-apple';
+                displayName = 'macOS';
+                // Detect Apple Silicon vs Intel
+                if (userAgent.includes('arm') || userAgent.includes('aarch64')) {
+                    downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-arm64.dmg';
+                } else {
+                    downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-x64.dmg';
+                }
+            } else if (platform.includes('linux') || userAgent.includes('linux')) {
+                icon = 'fa-linux';
+                displayName = 'Linux';
+                downloadLink = 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64';
+            }
+            
+            document.getElementById('platform-icon').className = `fab ${icon}`;
+            document.getElementById('platform-name').textContent = `We detected you're using ${displayName}`;
+            document.getElementById('download-text').textContent = `Download for ${displayName}`;
+            document.getElementById('main-download-btn').href = downloadLink;
+        }
+        
+        function downloadForPlatform(platform) {
+            const links = {
+                'windows': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-windows-x64.exe',
+                'macos': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-macos-arm64.dmg',
+                'linux': 'https://github.com/Lexharden/nanocalc/releases/latest/download/nanocalc-linux-x64'
+            };
+            
+            window.location.href = links[platform];
+        }
+        
+        document.addEventListener('DOMContentLoaded', detectPlatform);
+    </script>
+</body>
+</html>
