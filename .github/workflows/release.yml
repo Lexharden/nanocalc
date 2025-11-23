@@ -31,6 +31,16 @@ jobs:
             target: x86_64-pc-windows-msvc
             artifact_name: nanocalc.exe
             asset_name: nanocalc-windows-x64.exe
+          
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: nanocalc
+            asset_name: NanoCalc-macos-arm64.app
+            
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: nanocalc
+            asset_name: NanoCalc-macos-x64.app
 
     steps:
       - name: Checkout
@@ -55,16 +65,57 @@ jobs:
         run: |
           cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
           chmod +x ${{ matrix.asset_name }}
+          
+          # Crear archivo .desktop para Linux con icono
+          mkdir -p nanocalc-linux
+          cp ${{ matrix.asset_name }} nanocalc-linux/
+          
+          if [ -f "target/release/icon.png" ]; then
+            cp target/release/icon.png nanocalc-linux/nanocalc.png
+          fi
+          
+          cat > nanocalc-linux/nanocalc.desktop <<EOF
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=NanoCalc
+          Comment=Nanoscale Optical Properties Calculator
+          Exec=./nanocalc
+          Icon=nanocalc.png
+          Terminal=false
+          Categories=Science;Education;Physics;
+          EOF
+          
+          # Crear script de instalación
+          cat > nanocalc-linux/install.sh <<EOF
+          #!/bin/bash
+          echo "Installing NanoCalc..."
+          mkdir -p ~/.local/share/applications
+          mkdir -p ~/.local/share/icons
+          cp nanocalc ~/.local/bin/ || sudo cp nanocalc /usr/local/bin/
+          cp nanocalc.png ~/.local/share/icons/
+          cp nanocalc.desktop ~/.local/share/applications/
+          chmod +x ~/.local/bin/nanocalc || sudo chmod +x /usr/local/bin/nanocalc
+          echo "Installation complete! You can now launch NanoCalc from your application menu."
+          EOF
+          
+          chmod +x nanocalc-linux/install.sh
+          tar -czf ${{ matrix.asset_name }}.tar.gz nanocalc-linux/
       
-      - name: Create DMG (macOS)
+      - name: Create .app bundle (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          mkdir -p NanoCalc.app/Contents/MacOS
-          mkdir -p NanoCalc.app/Contents/Resources
-          cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} NanoCalc.app/Contents/MacOS/
-          chmod +x NanoCalc.app/Contents/MacOS/${{ matrix.artifact_name }}
+          mkdir -p ${{ matrix.asset_name }}/Contents/MacOS
+          mkdir -p ${{ matrix.asset_name }}/Contents/Resources
+          cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}/Contents/MacOS/
+          chmod +x ${{ matrix.asset_name }}/Contents/MacOS/${{ matrix.artifact_name }}
           
-          cat > NanoCalc.app/Contents/Info.plist <<EOF
+          # Convertir iconset a icns si existe
+          if [ -d "target/release/NanoCalc.iconset" ]; then
+            iconutil -c icns target/release/NanoCalc.iconset -o ${{ matrix.asset_name }}/Contents/Resources/AppIcon.icns
+          fi
+          
+          cat > ${{ matrix.asset_name }}/Contents/Info.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -81,6 +132,8 @@ jobs:
               <string>0.1.0</string>
               <key>CFBundlePackageType</key>
               <string>APPL</string>
+              <key>CFBundleIconFile</key>
+              <string>AppIcon</string>
               <key>LSMinimumSystemVersion</key>
               <string>11.0</string>
               <key>NSHighResolutionCapable</key>
@@ -90,26 +143,47 @@ jobs:
           EOF
           
           # Firmar ad-hoc (sin certificado) para evitar el error "damaged"
-          codesign --force --deep --sign - NanoCalc.app
+          codesign --force --deep --sign - ${{ matrix.asset_name }}
           
-          mkdir -p dmg
-          cp -r NanoCalc.app dmg/
-          
-          # Crear un symlink a Applications para facilitar la instalación
-          ln -s /Applications dmg/Applications
-          
-          hdiutil create -volname "NanoCalc" -srcfolder dmg -ov -format UDZO ${{ matrix.asset_name }}
+          # Comprimir el .app para subir como artifact
+          zip -r ${{ matrix.asset_name }}.zip ${{ matrix.asset_name }}
 
       - name: Prepare binary (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+          
+          REM Crear carpeta con ejecutable e icono
+          mkdir nanocalc-windows
+          copy ${{ matrix.asset_name }} nanocalc-windows\
+          
+          if exist "target\release\icon.png" (
+            copy target\release\icon.png nanocalc-windows\nanocalc.png
+          )
+          
+          REM Comprimir todo
+          powershell -Command "Compress-Archive -Path nanocalc-windows\* -DestinationPath ${{ matrix.asset_name }}.zip"
 
-      - name: Upload artifact
+      - name: Upload artifact (macOS)
+        if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}.zip
+      
+      - name: Upload artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}.tar.gz
+      
+      - name: Upload artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}.zip
 
   create-release:
     needs: build-release
@@ -153,19 +227,26 @@ jobs:
             - ⚡ High-performance Rust implementation
             
             ### Downloads
-            - **Windows**: Download `nanocalc-windows-x64.exe`
-            - **macOS (Apple Silicon)**: Download `nanocalc-macos-arm64.dmg`
-            - **macOS (Intel)**: Download `nanocalc-macos-x64.dmg`
-            - **Linux**: Download `nanocalc-linux-x64`
+            - **Windows**: Download `nanocalc-windows-x64.exe.zip`
+            - **macOS (Apple Silicon)**: Download `NanoCalc-macos-arm64.app.zip`
+            - **macOS (Intel)**: Download `NanoCalc-macos-x64.app.zip`
+            - **Linux**: Download `nanocalc-linux-x64.tar.gz`
             
             ### Installation
-            - **Windows**: Run the .exe file directly
+            - **Windows**: 
+              1. Unzip the file
+              2. Run `nanocalc-windows-x64.exe`
+              3. Includes icon file for shortcuts
             - **macOS**: 
-              1. Open the .dmg file
-              2. Drag NanoCalc to Applications folder
-              3. If you get "damaged" error, run in Terminal: `xattr -cr /Applications/NanoCalc.app`
+              1. Download and unzip the .app.zip file
+              2. Move NanoCalc.app to Applications folder
+              3. If you get "damaged" error, run in Terminal: `xattr -cr /Applications/NanoCalc-macos-*.app`
               4. Then right-click the app and select "Open"
-            - **Linux**: Make executable with `chmod +x nanocalc-linux-x64` then run
+            - **Linux**: 
+              1. Extract: `tar -xzf nanocalc-linux-x64.tar.gz`
+              2. Run installer: `cd nanocalc-linux && ./install.sh`
+              3. Or run directly: `./nanocalc`
+              4. Includes .desktop file and icon for application menu integration
             
             ### macOS Security Note
             Since the app is not notarized by Apple, you may need to allow it in System Preferences > Privacy & Security after first launch.
@@ -175,9 +256,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./artifacts/nanocalc-linux-x64/nanocalc-linux-x64
-            ./artifacts/nanocalc-windows-x64.exe/nanocalc-windows-x64.exe
-            ./artifacts/nanocalc-macos-arm64.dmg/nanocalc-macos-arm64.dmg
-            ./artifacts/nanocalc-macos-x64.dmg/nanocalc-macos-x64.dmg
+            ./artifacts/nanocalc-linux-x64/nanocalc-linux-x64.tar.gz
+            ./artifacts/nanocalc-windows-x64.exe/nanocalc-windows-x64.exe.zip
+            ./artifacts/NanoCalc-macos-arm64.app/NanoCalc-macos-arm64.app.zip
+            ./artifacts/NanoCalc-macos-x64.app/NanoCalc-macos-x64.app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
